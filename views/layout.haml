@@ -1,0 +1,16 @@
+%html
+  %head
+    %title InterMine JBrowse Adaptor
+    %link{:rel => "stylesheet", :href => "/css/style.css"}
+
+  %body
+    %h1 InterMine JBrowse Adaptor
+    %p
+      This application provides a JSON REST API endpoint for JBrowse
+
+    #content
+      =yield
+
+    #footer
+      %p
+        powered by Sinatra and InterMine

@@ -1,0 +1,12 @@
+%h2 Global Stats
+%table
+  - global_stats.each do |name, value|
+    %tr
+      %td= name
+      %td= value
+
+%h2 Reference Sequences
+%ul
+  - ref_seqs.each do |chrom|
+    %li
+      %a{:href => "/#{chrom.primaryIdentifier}"}= chrom.primaryIdentifier

@@ -1,0 +1,65 @@
+body, h1, h2, h3, h4 {
+    color: #333;
+    font-family: "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    font-size: 14px;
+}
+
+h1 {
+    font-size: 2em;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+.features {
+    width: 100%;
+    padding: 0;
+}
+
+.features .feature {
+    list-style-type: none;
+    padding: 1em;
+    margin-left: 25px;
+    margin-bottom: 25px;
+    width: 80%;
+    border: 1px solid #555;
+}
+
+.feature .feature-type {
+    display: block;
+    text-transform: uppercase;
+}
+
+.feature .name, .feature .unique-id {
+    display: inline-block;
+}
+
+.location {
+    font-family: monospace;
+}
+
+ol.basepairs {
+    padding: 0;
+    margin: 0;
+    max-width: 1440px;
+}
+
+.basepairs li {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    padding: 2px;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    float: left;
+    list-style-type: none;
+}
+

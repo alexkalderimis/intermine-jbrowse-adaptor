@@ -1,0 +1,8 @@
+%h2 #{refseq.primaryIdentifier}:#{segment[:start]}..#{segment[:end]} stats
+%table
+  - stats.each do |name, value|
+    %tr
+      %td= name
+      %td= value
+
+%a{:href => "/#{ refseq.primaryIdentifier }/features?start=#{ segment[:start] }&end=#{ segment[:end]}"} features

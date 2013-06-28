@@ -1,0 +1,6 @@
+%h2 Sequence for #{ name }:#{segment[:start]}..#{segment[:end]}
+
+%ol.basepairs
+  - sequence.chars.each do |base|
+    %li= base
+

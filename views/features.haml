@@ -1,0 +1,23 @@
+%h2
+  Features overlapping #{refseq.primaryIdentifier}:#{segment[:start]}..#{segment[:end]}
+
+%ul.features
+  - features.each do |feature|
+    %li.feature
+      .feature-type= feature.type
+      .name= feature.name
+      .unique-id= feature.uniqueID
+      .location
+        #{ refseq.primaryIdentifier }:#{ feature.end }..#{ feature.end }
+        = feature.strand
+
+      - if feature.subfeatures.size > 0
+        %h3 subfeatures
+        %ul
+        - feature.subfeatures.each do |subfeature|
+          %li.subfeature
+            .feature-type= subfeature.type
+            .start= subfeature.start
+            .end= subfeature.end
+            .strand= subfeature.strand
+
