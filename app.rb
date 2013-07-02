@@ -31,7 +31,7 @@ def get_global_stats
     {:featureCount => count_features, :featureDensity => feature_density}
 end
 
-def get_refseq(name, segment)
+def get_refseq(name, segment = {})
     q = FLYMINE.new_query("Chromosome").select("*").
         where(:primaryIdentifier => name, "organism.taxonId" => 7227)
 
@@ -44,7 +44,7 @@ end
 
 SEQ_CACHE = {}
 
-def get_refseq_residues(name, segment)
+def get_refseq_residues(name, segment = {})
     if SEQ_CACHE[name].nil?
         puts "Fetching sequence data for #{ name }"
         chrom = get_refseq(name, {:sequence => true})
@@ -59,7 +59,7 @@ def get_refseq_residues(name, segment)
     seq[s.to_i, len]
 end
 
-def get_range(name, segment)
+def get_range(name, segment = {})
     if segment.nil?
         return nil
     elsif segment[:start].nil? and segment[:end].nil?
@@ -71,7 +71,7 @@ def get_range(name, segment)
     end
 end
 
-def get_segment_length(name, segment)
+def get_segment_length(name, segment = {})
     if segment[:start].nil? and segment[:end].nil?
         return get_refseq(name).length
     elsif segment[:start].nil? or segment[:end].nil?
@@ -85,7 +85,7 @@ def get_segment_length(name, segment)
     end
 end
 
-def get_refseq_stats(name, segment)
+def get_refseq_stats(name, segment = {})
     feature_q = FLYMINE.new_query("SequenceFeature").
         select(:id).
         where("chromosome.primaryIdentifier" => name)
@@ -174,12 +174,12 @@ class JBrowseMainFeature < JBrowseFeature
     end
 end
 
-def get_refseq_feature(name, segment)
+def get_refseq_feature(name, segment = {})
     seq = get_refseq_residues(name, segment)
     [ RefSeqFeature.new(segment, seq) ]
 end
 
-def get_features(name, segment)
+def get_features(name, segment = {})
 
     if segment[:featuretype] == "Chromosome"
         return get_refseq_feature(name, segment)
