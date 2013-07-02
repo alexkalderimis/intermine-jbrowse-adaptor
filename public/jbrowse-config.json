@@ -1,0 +1,12 @@
+{
+  "reference": {
+    "key": "Drosophila melanogaster",
+    "label": "d.mel.ref",
+    "type": "JBrowse/View/Track/Sequence",
+    "storeClass": "JBrowse/Store/SeqFeature/REST",
+    "baseUrl": "http://localhost:9292",
+    "query": {
+      "sequence": 1
+    }
+  }
+}
