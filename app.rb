@@ -12,10 +12,11 @@ set :haml, :format => :html5
 
 FLYMINE = InterMine::JBrowse::Adaptor.new("www.flymine.org/query", 7227)
 
+# Common control methods shared by HTML and JSON outputs
 
 def get_refseq_feature(name, segment = {})
     seq = FLYMINE.sequence(name, "Chromosome", segment)
-    [ ReferenceSequence.new(segment, seq) ]
+    [ InterMine::JBrowse::ReferenceSequence.new(segment, seq) ]
 end
 
 def get_features(name, segment)
@@ -27,27 +28,33 @@ end
 
 get "/" do
     haml :index, :locals => {
-        :global_stats => get_global_stats,
-        :ref_seqs => get_refseqs
+        :global_stats => FLYMINE.global_stats
+        :ref_seqs => FLYMINE.refseqs
     }
 end
 
 get "/:refseq" do |name|
-    stats = get_refseq_stats(name, params)
-    chrom = get_refseq(name)
-    haml :refseq, :locals => {:segment => params, :refseq => chrom, :stats => stats}
+    haml :refseq, :locals => {
+        :segment => params,
+        :refseq => FLYMINE.feature(name, {}, "Chromosome"),
+        :stats => FLYMINE.stats(name, "Chromosome", params[:type], params)
+    }
 end
 
 get "/:refseq/features" do |name|
-    chrom = get_refseq(name)
-    features = get_features(name, params)
-    haml :features, :locals => {:segment => params, :refseq => chrom, :features => features}
+    haml :features, :locals => {
+        :segment => params,
+        :refseq => FLYMINE.feature(name, {}, "Chromosome"),
+        :features => get_features(name, params)
+    }
 end
 
 get "/:refseq/residues" do |name|
-    puts "Getting residues for #{ name }"
-    sequence = get_refseq_residues(name, params)
-    haml :sequence, :locals => {:sequence => sequence, :name => name, :segment => params}
+    haml :sequence, :locals => {
+        :sequence => FLYMINE.sequence(name, "Chromosome", params),
+        :name => name,
+        :segment => params
+    }
 end
 
 # Routes to run a local JBrowse.
@@ -59,11 +66,11 @@ end
 # Aand here begin the routes required by the JBrowse REST Store API
 
 get "/stats/global" do
-    get_global_stats.to_json
+    FLYMINE.global_stats.to_json
 end
 
 get "/stats/region/:refseq_name" do |name|
-    get_refseq_stats(name, params).to_json
+    FLYMINE.stats(name, "Chromosome", params[:type], params).to_json
 end
 
 get "/features/:refseq_name" do
