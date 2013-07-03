@@ -11,78 +11,7 @@ set :haml, :format => :html5
 
 FLYMINE = InterMine::JBrowse::Adaptor.new("www.flymine.org/query", 7227)
 
-def get_refseq(name, segment = {})
-    q = FLYMINE.query("Chromosome").select("*").
-        where(:primaryIdentifier => name, "organism.taxonId" => 7227)
 
-    if segment and segment[:sequence]
-        q.add_to_select("sequence.residues")
-    end
-
-    q.first
-end
-
-SEQ_CACHE = {}
-
-def get_refseq_residues(name, segment = {})
-    if SEQ_CACHE[name].nil?
-        puts "Fetching sequence data for #{ name }"
-        chrom = get_refseq(name, {:sequence => true})
-        SEQ_CACHE[name] = chrom.sequence.residues
-    end
-    puts "Reading sequence from cache"
-    seq = SEQ_CACHE[name]
-    s = segment[:start] or 0
-    e = segment[:end] or seq.size
-    len = e.to_i - s.to_i
-
-    seq[s.to_i, len]
-end
-
-def get_range(name, segment = {})
-    if segment.nil?
-        return nil
-    elsif segment[:start].nil? and segment[:end].nil?
-        return nil
-    elsif segment[:start].nil? or segment[:end].nil?
-        return "#{name}:#{segment[:start] or segment[:end]}"
-    else
-        return "#{name}:#{segment[:start]}..#{segment[:end]}"
-    end
-end
-
-def get_segment_length(name, segment = {})
-    if segment[:start].nil? and segment[:end].nil?
-        return get_refseq(name).length
-    elsif segment[:start].nil? or segment[:end].nil?
-        if segment[:start].nil?
-            return segment[:end].to_i
-        else
-            return get_refseq(name).length - segment[:start].to_i
-        end
-    else
-        return segment[:end].to_i - segment[:start].to_i
-    end
-end
-
-def get_refseq_stats(name, segment = {})
-    feature_q = FLYMINE.new_query("SequenceFeature").
-        select(:id).
-        where("chromosome.primaryIdentifier" => name)
-
-    range = get_range(name, segment)
-    segment_length = get_segment_length(name, segment)
-
-    unless range.nil?
-        feature_q = feature_q.where("chromosomeLocation" => {:OVERLAPS => [range]})
-    end
-
-    feature_count = feature_q.count
-
-    feature_density = feature_count.to_f / segment_length.to_f
-    
-    {:featureCount => feature_count, :featureDensity => feature_density}
-end
 
 module Hashlike
 

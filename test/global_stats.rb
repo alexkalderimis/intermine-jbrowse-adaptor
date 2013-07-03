@@ -1,5 +1,8 @@
 require "test/unit"
+require "set"
 require "../lib/intermine/jbrowse/data"
+
+BASES = Set['g', 't', 'c', 'a']
 
 class TestJBrowseAdaptor < Test::Unit::TestCase
 
@@ -47,6 +50,26 @@ class TestJBrowseAdaptor < Test::Unit::TestCase
     def test_feature
         x_chrom = @adaptor.feature("X", {}, "Chromosome")
         assert(x_chrom.length > 200_000, "X is suitably long")
+    end
+
+    def test_seq
+        dna = @adaptor.sequence("FBgn0004053", "Gene")
+        assert dna.chars.all? {|c| BASES.include? c}
+    end
+
+    def test_sub_seq
+        zen = @adaptor.feature("FBgn0004053", {}, "Gene")
+        all_dna = @adaptor.sequence("FBgn0004053", "Gene")
+        some_dna = @adaptor.sequence("FBgn0004053", "Gene", {:end => zen.length / 2})
+
+        assert(all_dna.size > some_dna.size, "All dna #{ all_dna.size } isn't bigger than some dna #{ some_dna.size }")
+        assert(all_dna.include?(some_dna), "All dna doesn't contain some dna")
+    end
+
+    def test_feature_stats
+        stats = @adaptor.stats("X")
+        assert(stats[:featureCount] > 100_000, "Too few features")
+        assert_in_delta(0.09, stats[:featureDensity], 0.005, "Density is off")
     end
 
 end
