@@ -14,18 +14,6 @@ module InterMine
                 @taxId = taxId
             end
 
-            def for_organism
-                {"organism.taxonId" => @taxId}
-            end
-
-            def for_organism_and_name(name)
-                for_organism.merge(:primaryIdentifier => name)
-            end
-
-            def chromosomes
-                @service.query("Chromosome").where(for_organism)
-            end
-
             def refseqs
                 if @refseqs.nil?
                     @refseqs = chromosomes.select(:primaryIdentifier, :length).all.to_a
@@ -110,6 +98,18 @@ module InterMine
             end
 
             private
+
+            def for_organism
+                {"organism.taxonId" => @taxId}
+            end
+
+            def for_organism_and_name(name)
+                for_organism.merge(:primaryIdentifier => name)
+            end
+
+            def chromosomes
+                @service.query("Chromosome").where(for_organism)
+            end
 
             def add_subfeatures(q)
                 type_constraint = {
