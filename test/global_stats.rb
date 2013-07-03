@@ -1,8 +1,12 @@
 require "test/unit"
 require "set"
-require "../lib/intermine/jbrowse/data"
+require "./lib/intermine/jbrowse/data"
+require "intermine/service"
 
 BASES = Set['g', 't', 'c', 'a']
+
+flymine = Service.new("www.flymine.org/query")
+SO_TERMS = flymine.query("SOTerm").select(:name).all.map(&:name).to_set
 
 class TestJBrowseAdaptor < Test::Unit::TestCase
 
@@ -70,6 +74,20 @@ class TestJBrowseAdaptor < Test::Unit::TestCase
         stats = @adaptor.stats("X")
         assert(stats[:featureCount] > 100_000, "Too few features")
         assert_in_delta(0.09, stats[:featureDensity], 0.005, "Density is off")
+    end
+
+    def test_features
+        range = {:start => 45678, :end => 56789}
+        features = @adaptor.features("X", "Chromosome", "SequenceFeature", range)
+        assert(features.size > 10, "Too few features (#{ features.size })")
+        assert(features.all? {|f| f.feature.primaryIdentifier}, "Some features don't have the expected properties")
+        all_within_range = features.all? do |f|
+            overlaps = f.start >= range[:start] and f.start < range[:end]
+            overlaps ||= f.end < range[:end] and f.end >= range[:start]
+            overlaps || (f.start < range[:start] and f.end >= range[:end])
+        end
+        assert(all_within_range, "Some of the features are not within the range")
+        assert(features.all? {|f| SO_TERMS.include? f.feature.sequenceOntologyTerm.name})
     end
 
 end

@@ -85,7 +85,66 @@ module InterMine
                 {:featureCount => c, :featureDensity => density}
             end
 
+            def features(on, parent_type = "Chromosome", feature_type = "SequenceFeature", segment = {})
+                q = located_features_q on, parent_type, feature_type
+
+                if segment[:subfeatures]
+                    q = add_subfeatures(q)
+                end
+
+                range = get_range on, segment
+
+                unless range.nil?
+                    q = q.where(:locatedFeatures => {:OVERLAPS => [range]})
+                end
+
+                chrom = q.first
+
+                if chrom.nil?
+                    puts "No chromosome found"
+                    return []
+                else
+                    chrom.locatedFeatures
+                end
+
+            end
+
             private
+
+            def add_subfeatures(q)
+                type_constraint = {
+                    "locatedFeatures.feature.locatedFeatures.feature" => {
+                        :sub_class => "SequenceFeature"
+                     }
+                }
+
+                q.where(type_constraint).add_to_select(*sub_feature_view)
+            end
+
+            def sub_feature_view
+                [
+                    "locatedFeatures.feature.locatedFeatures.*",
+                    "locatedFeatures.feature.locatedFeatures.feature.*",
+                    "locatedFeatures.feature.locatedFeatures.feature.sequenceOntologyTerm.name"
+                ]
+            end
+
+            def located_features_q(name, parent = "Chromosome", child = "SequenceFeature")
+                @service.query(parent).
+                    where("locatedFeatures.feature" => {:sub_class => child}).
+                    select(*feature_view).
+                    where(for_organism_and_name(name)).
+                    outerjoin("locatedFeatures")
+            end
+
+            def feature_view
+                [
+                    "primaryIdentifier",
+                    "locatedFeatures.*",
+                    "locatedFeatures.feature.*",
+                    "locatedFeatures.feature.sequenceOntologyTerm.name"
+                ]
+            end
 
             def segment_length(name, type, segment = {})
                 if segment[:start].nil? and segment[:end].nil?
