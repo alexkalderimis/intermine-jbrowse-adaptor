@@ -5,34 +5,14 @@ require "sinatra"
 require "haml"
 require "json"
 
+require "./lib/intermine/jbrowse/data"
+
 set :haml, :format => :html5
 
-FLYMINE = Service.new("www.flymine.org/query")
-
-def count_features
-    FLYMINE.new_query("SequenceFeature").
-        select(:id).
-        where("organism.taxonId" => 7227).
-        count
-end
-
-def get_refseqs
-    FLYMINE.new_query("Chromosome").
-        select(:primaryIdentifier, :length).
-        where("organism.taxonId" => 7227).
-        all
-end
-
-def get_global_stats
-    feature_count = count_features
-    chroms = get_refseqs
-    total_length = chroms.map(&:length).compact.reduce(&:+)
-    feature_density = feature_count.to_f / total_length.to_f
-    {:featureCount => count_features, :featureDensity => feature_density}
-end
+FLYMINE = InterMine::JBrowse::Adaptor.new("www.flymine.org/query", 7227)
 
 def get_refseq(name, segment = {})
-    q = FLYMINE.new_query("Chromosome").select("*").
+    q = FLYMINE.query("Chromosome").select("*").
         where(:primaryIdentifier => name, "organism.taxonId" => 7227)
 
     if segment and segment[:sequence]
