@@ -44,16 +44,12 @@ class JBrowsify < Sinatra::Base
 
     # Routes to run a local JBrowse.
 
-    get "/jbrowse" do
-        haml :jbrowse, :locals => {
-            :service_url => SERVICE_URL
-        }
+    get %r{/JBrowse-.*/data/names/root.json} do
+        {}.to_json
     end
 
-    get "/trackList.json" do
-        model = Service.new(SERVICE_URL).model
-        seq_feature = model.table("SequenceFeature")
-        feature_tracks = model.classes.values.select{|c| c.subclass_of? seq_feature}.map do |c|
+    get %r{/JBrowse-.*/data/trackList.json} do
+        tracks = FLYMINE.sequence_types.map do |c|
             {
                 :label => "#{ c.name }_track",
                 :key => "#{ c.name }s",
@@ -64,22 +60,20 @@ class JBrowsify < Sinatra::Base
             }
         end
 
-        reference_tracks = FLYMINE.refseqs.map do |refseq|
-            {
-                :label => "#{ refseq.primaryIdentifier }_sequence_track",
-                :key => refseq.primaryIdentifier,
-                :type => "JBrowse/View/Track/Sequence",
-                :storeClass => "JBrowse/Store/SeqFeature/REST",
-                :baseUrl => request.base_url,
-                :query => { :sequence => true, :type => "Chromosome" }
-            }
-        end
+        tracks << {
+            :label => "sequence_track",
+            :key => "DNA",
+            :type => "JBrowse/View/Track/Sequence",
+            :storeClass => "JBrowse/Store/SeqFeature/REST",
+            :baseUrl => request.base_url,
+            :query => { :sequence => true, :type => "Chromosome" }
+        }
 
-        {:tracks => feature_tracks + reference_tracks}.to_json
+        {:dataset_id => "InterMine", :tracks => tracks}.to_json
 
     end
 
-    get "/seq/refSeqs.json" do 
+    get %r{/JBrowse-.*/data/seq/refSeqs.json} do 
         FLYMINE.refseqs.map do |rs|
             {:name => rs.primaryIdentifier, :start => 0, :end => rs.length }
         end.to_json
