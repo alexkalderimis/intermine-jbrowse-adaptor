@@ -9,4 +9,4 @@
 %ul
   - ref_seqs.each do |chrom|
     %li
-      %a{:href => "/#{chrom.primaryIdentifier}?start=0&end=#{ chrom.length }"}= chrom.primaryIdentifier
+      %a{:href => "/#{chrom.primaryIdentifier}?start=1&end=#{ chrom.length }"}= chrom.primaryIdentifier
