@@ -1,0 +1,13 @@
+Gemfile.lock
+public/JBrowse-1.9.7/INSTALL
+public/JBrowse-1.9.7/Makefile.PL
+public/JBrowse-1.9.7/bin/
+public/JBrowse-1.9.7/compat_121.html
+public/JBrowse-1.9.7/docs/
+public/JBrowse-1.9.7/plugins/
+public/JBrowse-1.9.7/release-notes.txt
+public/JBrowse-1.9.7/sample_data/
+public/JBrowse-1.9.7/setup.sh
+public/JBrowse-1.9.7/src/perl5/
+public/JBrowse-1.9.7/src/wig2png/
+
