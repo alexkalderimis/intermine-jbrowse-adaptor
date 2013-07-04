@@ -48,6 +48,10 @@ class JBrowsify < Sinatra::Base
         {}.to_json
     end
 
+    get %r{JBrowse-.*/jbrowse_conf.json} do
+        { :datasets => { :InterMine => { :url => request.base_url, :name => "InterMine data" }}}.to_json
+    end
+
     get %r{/JBrowse-.*/data/trackList.json} do
         tracks = FLYMINE.sequence_types.map do |c|
             {
