@@ -6,4 +6,4 @@ A REST Feature Store implementation for InterMine data warehouses
 This serves as a translating webservice between the intermine webservices and
 the API expected by JBrowse.
 
-This app tastes best with Ruby 2.0.0
+This app tastes best with JRuby-1.7.4 (at least so I have found...)
