@@ -46,27 +46,28 @@ module InterMine
             end
 
             def sequence(name, type = "SequenceFeature", segment = {})
-                key = "#{ type }/#{ name }"
-                cache = @sequence_cache
-                unless cache.has_key? key
-                    cache[key] = feature(name, {:sequence => true}, type).sequence.residues
+                if @service.version < 14
+                    do_seq_with_cache name, type, segment
+                else
+                    do_native_sequence name, type, segment
                 end
-                    
-                dna = @sequence_cache[key]
-                s = segment[:start] || 0
-                e = segment[:end] || dna.size
-                len = e.to_i - s.to_i
-                dna[s.to_i, len]
             end
 
             def stats(name, type = "Chromosome", feature = "SequenceFeature", segment = {})
                 q = @service.query(feature).select(:id).where(for_organism)
+                seq_feat = feature(name, segment, type)
                 range = get_range name, segment
                 length = segment_length name, type, segment
 
                 unless range.nil?
-                    q = q.where(:chromosomeLocation => {:OVERLAPS => [range]})
+                    if segment[:start] == 0 and segment[:end] == seq_feat.length
+                        q = q.where("chromosomeLocation.locatedOn.primaryIdentifier" => name)
+                    else
+                        q = q.where(:chromosomeLocation => {:OVERLAPS => [range]})
+                    end
                 end
+
+                puts(q)
 
                 c = q.count
                 density = c.to_f / length.to_f
@@ -98,6 +99,29 @@ module InterMine
             end
 
             private
+
+            def do_seq_with_cache(name, type, segment)
+                key = "#{ type }/#{ name }"
+                cache = @sequence_cache
+                unless cache.has_key? key
+                    cache[key] = feature(name, {:sequence => true}, type).sequence.residues
+                end
+                    
+                dna = @sequence_cache[key]
+                s = segment[:start] || 0
+                e = segment[:end] || dna.size
+                len = e.to_i - s.to_i
+                dna[s.to_i, len]
+            end
+
+            def do_native_sequence(name, type, segment)
+                result = @service.query(type).
+                    select("sequence.residues").
+                    where(for_organism_and_name(name)).
+                    sequences(segment).
+                    first
+                result["seq"]
+            end
 
             def for_organism
                 {"organism.taxonId" => @taxId}
