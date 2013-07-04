@@ -4,3 +4,11 @@
   - sequence.each_char do |base|
     %li{:class => "base #{ base.downcase }"}= base
 
+- s = segment[:start].to_i
+- e = segment[:end].to_i
+- seg_length = e - s
+
+- if s - seg_length > 1
+  %a{:href => "/#{ name }/residues?start=#{ s - seg_length }&end=#{ e - seg_length }"} prev
+
+%a{:href => "/#{ name }/residues?start=#{ s + seg_length }&end=#{ e + seg_length }"} next

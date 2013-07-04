@@ -34,7 +34,15 @@ module InterMine
                 feature_count = count_features
                 total_length = refseqs.map(&:length).compact.reduce(&:+)
                 density = feature_count.to_f / total_length.to_f
-                {:featureCount => feature_count, :featureDensity => density}
+                score_summary = @service.query("SequenceFeature").summaries(:score).first
+                {
+                    :featureCount => feature_count,
+                    :featureDensity => density,
+                    :scoreMin => score_summary["min"],
+                    :scoreMax => score_summary["max"],
+                    :scoreMean => score_summary["average"],
+                    :scoreStdDev => score_summary["stdev"]
+                }
             end
 
             def feature(name, segment = {}, type = "SequenceFeature")
@@ -67,11 +75,18 @@ module InterMine
                     end
                 end
 
-                puts(q)
-
+                score_summary = q.summaries(:score).first
                 c = q.count
+
                 density = c.to_f / length.to_f
-                {:featureCount => c, :featureDensity => density}
+
+                {
+                    :featureCount => c, :featureDensity => density,
+                    :scoreMin => score_summary["min"],
+                    :scoreMax => score_summary["max"],
+                    :scoreMean => score_summary["average"],
+                    :scoreStdDev => score_summary["stdev"]
+                }
             end
 
             def features(on, parent_type = "Chromosome", feature_type = "SequenceFeature", segment = {})
@@ -158,7 +173,8 @@ module InterMine
                     where("locatedFeatures.feature" => {:sub_class => child}).
                     select(*feature_view).
                     where(for_organism_and_name(name)).
-                    outerjoin("locatedFeatures")
+                    outerjoin("locatedFeatures").
+                    outerjoin("locatedFeatures.feature.sequenceOntologyTerm")
             end
 
             def feature_view
@@ -166,6 +182,7 @@ module InterMine
                     "primaryIdentifier",
                     "locatedFeatures.*",
                     "locatedFeatures.feature.*",
+                    "locatedFeatures.feature.score",
                     "locatedFeatures.feature.sequenceOntologyTerm.name"
                 ]
             end

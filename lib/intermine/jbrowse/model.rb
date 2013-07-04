@@ -13,16 +13,18 @@ module InterMine
 
         end
 
-        BasicFeature = Struct.new("BasicFeature", :type, :name, :uniqueID, :start, :end, :strand) do 
+        BasicFeature = Struct.new("BasicFeature", :type, :name, :description, :score, :uniqueID, :start, :end, :strand) do 
 
             include Hashlike
 
             def self.create(locatedFeature)
                 feature = locatedFeature.feature
-                type = feature.sequenceOntologyTerm.name
-                name = feature.name or feature.symbol
+                type = feature.sequenceOntologyTerm ? feature.sequenceOntologyTerm.name : nil
+                name = (feature.name or feature.symbol or feature.primaryIdentifier)
+                description = feature.respond_to?(:description) ? feature.description : nil
+                score = feature.score
                 uniqueID = feature.primaryIdentifier
-                BasicFeature.new(type, name, uniqueID, locatedFeature.start, locatedFeature.end, locatedFeature.strand)
+                BasicFeature.new(type, name, description, score, uniqueID, locatedFeature.start, locatedFeature.end, locatedFeature.strand)
             end
         end
 
@@ -35,7 +37,7 @@ module InterMine
             end
         end
 
-        Feature = Struct.new("Feature", :type, :name, :uniqueID, :start, :end, :strand, :subfeatures) do
+        Feature = Struct.new("Feature", :type, :name, :description, :score, :uniqueID, :start, :end, :strand, :subfeatures) do
 
             include Hashlike
 
