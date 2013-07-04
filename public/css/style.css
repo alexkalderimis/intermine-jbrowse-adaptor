@@ -63,3 +63,20 @@ ol.basepairs {
     list-style-type: none;
 }
 
+.basepairs li.base {
+    color: #f8f8f8;
+    font-weight: bold;
+}
+.basepairs li.base.g {
+    background: #e36118;
+}
+.basepairs li.base.c {
+    background: #e3188e;
+}
+.basepairs li.base.a {
+    background: #1853e3;
+}
+.basepairs li.base.t {
+    background: #0cc512;
+}
+
