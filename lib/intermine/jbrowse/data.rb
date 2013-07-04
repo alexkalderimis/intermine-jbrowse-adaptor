@@ -14,6 +14,13 @@ module InterMine
                 @taxId = taxId
             end
 
+            def sequence_types
+                sf = @service.model.table("SequenceFeature")
+                @service.model.classes.values.select do |c|
+                    c.name != "Chromosome" and c.subclass_of? sf
+                end
+            end
+
             def refseqs
                 if @refseqs.nil?
                     @refseqs = chromosomes.select(:primaryIdentifier, :length).all.to_a
