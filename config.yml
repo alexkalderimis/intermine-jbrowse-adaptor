@@ -1,0 +1,9 @@
+static: public
+haml:
+    format: html5
+
+services:
+    betaflymine:
+        root: "http://beta.flymine.org/beta"
+        taxon: 7227
+    

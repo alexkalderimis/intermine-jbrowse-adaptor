@@ -6,12 +6,30 @@ module InterMine
     module JBrowse
         class Adaptor
 
-            def initialize(url, taxId)
+            attr_reader :taxId
+
+            attr_accessor :page_size
+
+            def initialize(opts)
                 @sequence_cache = {}
                 @feature_counts = {}
+                @page_size = 1000 # basepairs
                 @refseqs = nil
-                @service = Service.new(url)
-                @taxId = taxId
+                @service = Service.new(opts[:root])
+                @taxId = opts[:taxon]
+            end
+
+            def root
+                @service.root
+            end
+
+            def short_segment(name, segment = {})
+                x = (segment[:start] || 0).to_i
+                y = (segment[:end] || feature(name, {}, "Chromosome").length).to_i
+                if y - x > page_size
+                    y = x + page_size
+                end
+                {:start => x, :end => y}
             end
 
             def sequence_types

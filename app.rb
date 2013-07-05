@@ -2,6 +2,8 @@ require "rubygems"
 
 require "intermine/service"
 require "sinatra/base"
+require "sinatra/config_file"
+require "sinatra/respond_with"
 require "haml"
 require "json"
 
@@ -10,37 +12,70 @@ require "./lib/intermine/jbrowse/model"
 
 class JBrowsify < Sinatra::Base
 
-    set :haml, :format => :html5
-    set :static, 'public'
+    register Sinatra::ConfigFile
+    register Sinatra::RespondWith
 
-    SERVICE_URL = "http://beta.flymine.org/beta"
-    ORGANISM = 7227
+    ADAPTORS = Hash[ settings.services.map{ |n, s| [n, InterMine::JBrowse::Adaptor.new(s)] } ]
 
-    FLYMINE = InterMine::JBrowse::Adaptor.new(SERVICE_URL, ORGANISM)
+    def adaptor(name)
+        ADAPTORS[name] or halt 404
+    end
 
     # Common control methods shared by HTML and JSON outputs
 
-    def get_refseq_feature(name, segment = {})
-        seq = FLYMINE.sequence(name, "Chromosome", segment)
+    def feature_type
+        params[:type] || "SequenceFeature"
+    end
+
+    def get_refseq_feature(label, name, segment = {})
+        seq = adaptor(label).sequence(name, "Chromosome", segment)
         [ InterMine::JBrowse::ReferenceSequence.create(segment, seq) ]
     end
 
-    def get_features(name, segment = {})
+    def get_features(label, name, segment = {})
         if segment[:sequence] and segment[:type] == "Chromosome"
-            return get_refseq_feature(name, segment)
+            return get_refseq_feature(label, name, segment)
         end
 
-        fs = FLYMINE.features(name, "Chromosome", (segment[:type] || "SequenceFeature"), segment)
+        fs = adaptor(label).features(name, "Chromosome", feature_type, segment)
         fs.map {|f| InterMine::JBrowse::Feature.create(f) }
     end
 
-    def short_segment(name, segment = {})
-        x = (segment[:start] || 0).to_i
-        y = (segment[:end] || FLYMINE.feature(name, {}, "Chromosome").length).to_i
-        if y - x > 1000
-            y = x + 1000
+    # Routes to manage services
+
+    get "/services", :provides => [:html, :json] do
+        respond_with :services, settings.services
+    end
+
+    get "/services/:name", :provides => [:html, :json] do |name|
+        respond_to do |f|
+            f.json do
+                service = settings.services[name] or halt 404
+                service.to_json
+            end
+            f.html do
+                haml :index, :locals => {
+                    :global_stats => adaptor(name).global_stats,
+                    :ref_seqs => adaptor(name).refseqs
+                }
+            end
         end
-        {:start => x, :end => y}
+    end
+
+    post "/services", :provides => [:json, :html] do
+        unless params[:root] and params[:taxon] and params[:label]
+            error 400
+        end
+        service = params.select { |k, v| [:root, :taxon].include? k }
+        adaptor = InterMine::JBrowse::Adaptor.new(service)
+
+        ADAPTORS[params[:label]] = adaptor
+        settings.services[params[:label]] = service
+
+        respond_to do |f| 
+            f.json { service.to_json }
+            f.html { redirect to("/services/#{ params[:label] }"), 201
+        end
     end
 
     # Routes to run a local JBrowse.
@@ -49,53 +84,57 @@ class JBrowsify < Sinatra::Base
         {}.to_json
     end
 
-    get %r{JBrowse-.*/jbrowse_conf.json} do
-        { :datasets => { :InterMine => { :url => request.base_url, :name => "InterMine data" }}}.to_json
+    get "/:service/jbrowse/jbrowse_conf.json", :provides => [:json] do |label|
+        dataset = {:url => "#{ request.base_url }/#{ label }", :name => "#{ label} data"}
+        datasets = Hash.new()
+        datasets.store(label, dataset)
+        respond_with :datasets => datasets
     end
 
-    get %r{/JBrowse-.*/data/trackList.json} do
-        tracks = FLYMINE.sequence_types.map do |c|
+    get "/:service/jbrowse/data/trackList.json", :provides => [:json] do |label|
+        tracks = adaptor(label).sequence_types.map do |c|
             {
-                :label => "#{ c.name }_track",
+                :label => "#{label}_#{ c.name }_track",
                 :key => "#{ c.name }s",
                 :type => "JBrowse/View/Track/HTMLFeatures",
                 :storeClass => "JBrowse/Store/SeqFeature/REST",
-                :baseUrl => "#{ request.base_url }/",
+                :baseUrl => "#{ request.base_url }/#{ label }",
                 :query => { :type => c.name }
             }
         end
 
         tracks << {
-            :label => "sequence_track",
+            :label => "#{ label }_sequence_track",
             :key => "DNA",
             :type => "JBrowse/View/Track/Sequence",
             :storeClass => "JBrowse/Store/SeqFeature/REST",
-            :baseUrl => "#{ request.base_url }/",
+            :baseUrl => "#{ request.base_url }/#{ label }",
             :query => { :sequence => true, :type => "Chromosome" }
         }
 
-        {:dataset_id => "InterMine", :tracks => tracks}.to_json
+        respond_with :dataset_id => "InterMine", :tracks => tracks
 
     end
 
-    get %r{/JBrowse-.*/data/seq/refSeqs.json} do 
-        FLYMINE.refseqs.map do |rs|
+    get "/:service/jbrowse/data/seq/refSeqs.json", :provides => [:json] do |label|
+        data = adaptor(label).refseqs.map do |rs|
             {:name => rs.primaryIdentifier, :start => 0, :end => rs.length }
-        end.to_json
+        end
+        respond_with data
     end
 
     # And here begin the routes required by the JBrowse REST Store API
 
-    get "/stats/global" do
-        FLYMINE.global_stats.to_json
+    get "/:service/stats/global", :provides => [:json] do |label|
+        adaptor(label).global_stats.to_json
     end
 
-    get "/stats/region/:refseq_name" do |name|
-        FLYMINE.stats(name, "Chromosome", (params[:type] || "SequenceFeature"), params).to_json
+    get "/:service/stats/region/:refseq_name", :provides => [:json] do |label, name|
+        adaptor(label).stats(name, "Chromosome", feature_type, params).to_json
     end
 
-    get "/features/:refseq_name" do |name|
-        {:features => get_features(name, params)}.to_json
+    get "/:service/features/:refseq_name", :provides => [:json] do |label, name|
+        {:features => get_features(label, name, params)}.to_json
     end
 
     # The routes useful for graphical inspection of the app.

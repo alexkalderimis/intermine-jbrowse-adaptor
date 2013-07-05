@@ -1,0 +1,15 @@
+%h2 Service Listing
+
+%table.table
+  %thead
+    %tr
+      %th Label
+      %th Root
+      %th Organism
+  %tbody
+    - settings.services.each |label, service|
+      %tr
+        %td
+          %a{:href => url("/services/#{ label }")} label
+        %td= service[:root]
+        %td= service[:taxon]
