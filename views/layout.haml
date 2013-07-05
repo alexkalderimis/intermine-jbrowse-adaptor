@@ -5,8 +5,15 @@
     %link{:rel => "stylesheet", :href => "http://cdn.intermine.org/css/bootstrap/2.0.4/css/bootstrap.css"}
 
   %body
+    .navbar
+      .navbar-inner
+        %h1.brand InterMine JBrowse Adaptor
+        %ul.nav
+          %li{:class => (request.path_info == "/" ? 'active' : '')}
+            %a{:href => "/"} Home
+
     .container-fluid
-      %h1 InterMine JBrowse Adaptor
+
       %p
         This application provides a JSON REST API endpoint for JBrowse
 
