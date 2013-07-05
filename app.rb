@@ -60,7 +60,7 @@ class JBrowsify < Sinatra::Base
                 :key => "#{ c.name }s",
                 :type => "JBrowse/View/Track/HTMLFeatures",
                 :storeClass => "JBrowse/Store/SeqFeature/REST",
-                :baseUrl => request.base_url,
+                :baseUrl => "#{ request.base_url }/",
                 :query => { :type => c.name }
             }
         end
@@ -70,7 +70,7 @@ class JBrowsify < Sinatra::Base
             :key => "DNA",
             :type => "JBrowse/View/Track/Sequence",
             :storeClass => "JBrowse/Store/SeqFeature/REST",
-            :baseUrl => request.base_url,
+            :baseUrl => "#{ request.base_url }/",
             :query => { :sequence => true, :type => "Chromosome" }
         }
 
