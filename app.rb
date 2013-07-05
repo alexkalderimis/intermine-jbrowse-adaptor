@@ -11,6 +11,7 @@ require "./lib/intermine/jbrowse/model"
 class JBrowsify < Sinatra::Base
 
     set :haml, :format => :html5
+    set :static, 'public'
 
     SERVICE_URL = "http://beta.flymine.org/beta"
     ORGANISM = 7227
