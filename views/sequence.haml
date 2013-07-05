@@ -1,14 +1,20 @@
 %h2 Sequence for #{ name }:#{segment[:start]}..#{segment[:end]}
 
-%ol.basepairs
-  - sequence.each_char do |base|
-    %li{:class => "base #{ base.downcase }"}= base
+#sequence
+  %ol.basepairs
+    - sequence.each_char do |base|
+      %li{:class => "base #{ base.downcase }"}= base
+    .clear-fix
 
 - s = segment[:start].to_i
 - e = segment[:end].to_i
 - seg_length = e - s
 
-- if s - seg_length > 1
-  %a{:href => "/#{ name }/residues?start=#{ s - seg_length }&end=#{ e - seg_length }"} prev
-
-%a{:href => "/#{ name }/residues?start=#{ s + seg_length }&end=#{ e + seg_length }"} next
+%ul.pager
+  - if s - seg_length > 1
+    %li.previous
+      %a{:href => "/#{ name }/residues?start=#{ s - seg_length }&end=#{ e - seg_length }"}
+        previous
+  %li.next
+    %a{:href => "/#{ name }/residues?start=#{ s + seg_length }&end=#{ e + seg_length }"}
+      next

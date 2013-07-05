@@ -69,15 +69,42 @@ ol.basepairs {
     font-weight: bold;
 }
 .basepairs li.base.g {
-    background: #e36118;
+    background: #cf7f53;
 }
 .basepairs li.base.c {
-    background: #e3188e;
+    background: #d34798;
 }
 .basepairs li.base.a {
-    background: #1853e3;
+    background: #6188e6;
 }
 .basepairs li.base.t {
-    background: #0cc512;
+    background: #49af4c;
 }
 
+#ref-seqs {
+    list-style-type: none;
+}
+
+.ref-seq {
+    display: block;
+    min-height: 1.5em;
+    padding: 0.5em;
+    border: 1px solid #eee;
+    margin-bottom: 0.2em;
+    background: #ccc;
+}
+.ref-seq a {
+    color: #565656;
+    font-weight: bold;
+}
+
+.ref-seq:hover {
+    background: #4261A2;
+}
+.ref-seq:hover a {
+    color: #f8f8f8;
+}
+
+.clear-fix {
+    clear: both;
+}

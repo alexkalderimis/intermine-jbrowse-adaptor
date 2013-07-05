@@ -1,10 +1,10 @@
 %h2 #{refseq.primaryIdentifier}:#{segment[:start]}..#{segment[:end]} stats
-%table
-  - stats.each do |name, value|
+%table.table.table-bordered.table-striped
+  - stats.select{ |k, v| v }.each do |name, value|
     %tr
       %td= name
       %td= value
 
-%a{:href => "/#{ refseq.primaryIdentifier }/features?start=#{ segment[:start] }&end=#{ segment[:end]}"} features
+%a.btn{:href => "/#{ refseq.primaryIdentifier }/features?start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"} features
 
-%a{:href => "/#{ refseq.primaryIdentifier }/residues?start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"} sequence
+%a.btn{:href => "/#{ refseq.primaryIdentifier }/residues?start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"} sequence
