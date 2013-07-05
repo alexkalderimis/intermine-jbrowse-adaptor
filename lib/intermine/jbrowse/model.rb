@@ -19,7 +19,7 @@ module InterMine
 
             def self.create(locatedFeature)
                 feature = locatedFeature.feature
-                type = feature.sequenceOntologyTerm ? feature.sequenceOntologyTerm.name : nil
+                type = feature.sequenceOntologyTerm ? feature.sequenceOntologyTerm.name : feature.instance_variable_get('@__cd__').name
                 name = (feature.name or feature.symbol or feature.primaryIdentifier)
                 description = feature.respond_to?(:description) ? feature.description : nil
                 score = feature.score
