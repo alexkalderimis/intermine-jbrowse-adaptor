@@ -5,12 +5,12 @@
     %link{:rel => "stylesheet", :href => "http://cdn.intermine.org/css/bootstrap/2.0.4/css/bootstrap.css"}
 
   %body
-    .container
+    .container-fluid
       %h1 InterMine JBrowse Adaptor
       %p
         This application provides a JSON REST API endpoint for JBrowse
 
-      #content
+      #content.row-fluid
         =yield
 
       #footer.clear-fix
