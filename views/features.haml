@@ -1,6 +1,20 @@
 %h2
   Features overlapping #{refseq.primaryIdentifier}:#{segment[:start]}..#{segment[:end]}
 
+- s = segment[:start].to_i
+- e = segment[:end].to_i
+- seg_length = e - s
+- name = refseq.primaryIdentifier
+
+%ul.pager
+  - if s - seg_length > 1
+    %li.previous
+      %a{:href => "/#{ name }/features?start=#{ s - seg_length }&end=#{ e - seg_length }"}
+        previous
+  %li.next
+    %a{:href => "/#{ name }/features?start=#{ s + seg_length }&end=#{ e + seg_length }"}
+      next
+
 %ul.features
   - features.each do |feature|
     %li.feature
@@ -20,4 +34,3 @@
             .start= subfeature.start
             .end= subfeature.end
             .strand= subfeature.strand
-
