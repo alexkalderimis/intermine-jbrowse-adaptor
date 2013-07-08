@@ -10,7 +10,7 @@
 %ul.pager
   - if s - len > 1
     %li.previous
-      %a{:href => url("#{ base_url }/?start=#{ s - len }&end=#{ e - len }")}
+      %a{:href => url("#{ base_url }?start=#{ s - len }&end=#{ e - len }")}
         previous
   %li.next
     %a{:href => url("#{ base_url }?start=#{ s + len }&end=#{ e + len }")}
