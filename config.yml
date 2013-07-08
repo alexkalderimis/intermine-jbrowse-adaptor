@@ -1,5 +1,6 @@
 static: true
 public_folder: public
+jbrowse_dir: JBrowse-1.9.7
 haml:
     format: html5
 
