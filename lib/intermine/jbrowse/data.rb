@@ -6,6 +6,8 @@ module InterMine
     module JBrowse
         class Adaptor
 
+            EMPTY_SUMMARY = Hash.new
+
             attr_reader :taxId
 
             attr_accessor :page_size
@@ -105,7 +107,7 @@ module InterMine
                         end
                     end
 
-                    score_summary = q.summaries(:score).first
+                    score_summary = (q.summaries(:score).first || EMPTY_SUMMARY)
                     c = q.count
 
                     density = c.to_f / length.to_f
