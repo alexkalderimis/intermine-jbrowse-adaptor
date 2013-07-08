@@ -44,6 +44,10 @@ class JBrowsify < Sinatra::Base
         params[:type] || "SequenceFeature"
     end
 
+    def chrom_label(chrom)
+        "#{ chrom.primaryIdentifier }:#{(params[:start] || 0).to_i + 1}..#{params[:end] || chrom.length}"
+    end
+
     def get_refseq_feature(label, name, segment = {})
         seq = adaptor(label).sequence(name, "Chromosome", segment)
         [ InterMine::JBrowse::ReferenceSequence.create(segment, seq) ]

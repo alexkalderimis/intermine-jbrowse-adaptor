@@ -5,7 +5,9 @@
 - base_url = "/services/#{ params[:name] }/#{ chrom }/features"
 
 %h2
-  Features overlapping #{chrom}:#{params[:start]}..#{params[:end]}
+  Features overlapping
+  %a{:href => url("/services/#{ params[:name] }/#{ params[:refseq] }?start=#{ params[:start] }&end=#{ params[:end] }")}
+    #{ chrom_label(refseq) }
 
 %ul.pager
   - if s - len > 1

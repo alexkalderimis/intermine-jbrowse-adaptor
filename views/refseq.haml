@@ -2,7 +2,7 @@
 - short_seg = short_segment(params[:name], chrom)
 - qs = "start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"
 
-%h2 #{chrom}:#{params[:start]}..#{params[:end]} stats
+%h2 #{ chrom_label(refseq) } stats
 
 %table.table.table-bordered.table-striped
   %thead

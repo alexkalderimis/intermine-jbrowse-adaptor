@@ -1,8 +1,7 @@
 %h2
   Sequence for
-  %a{:href => url("/services/#{ params[:name] }/#{ params[:refseq] }")}
-    #{ params[:refseq] }:#{params[:start]}..#{params[:end]}
-
+  %a{:href => url("/services/#{ params[:name] }/#{ params[:refseq] }?start=#{ params[:start] }&end=#{ params[:end] }")}
+    #{ chrom_label(adaptor(params[:name]).feature(params[:refseq], "Chromosome")) }
 
 #sequence
   %ol.basepairs
