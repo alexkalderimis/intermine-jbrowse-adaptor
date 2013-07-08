@@ -6,6 +6,7 @@ require "sinatra/config_file"
 require "sinatra/respond_with"
 require "haml"
 require "json"
+require "multi_json"
 
 require "./lib/intermine/jbrowse/data"
 require "./lib/intermine/jbrowse/model"
