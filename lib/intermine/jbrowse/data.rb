@@ -24,7 +24,7 @@ module InterMine
             end
 
             def short_segment(name, segment = {})
-                x = (segment[:start] || 0).to_i
+                x = (segment[:start] || 1).to_i
                 y = (segment[:end] || feature(name, "Chromosome").length).to_i
                 if y - x > page_size
                     y = x + page_size
