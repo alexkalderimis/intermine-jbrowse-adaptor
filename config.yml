@@ -1,4 +1,5 @@
-static: public
+static: true
+public_folder: public
 haml:
     format: html5
 

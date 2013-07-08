@@ -1,4 +1,8 @@
-%h2 Sequence for #{ name }:#{segment[:start]}..#{segment[:end]}
+%h2
+  Sequence for
+  %a{:href => url("/services/#{ params[:name] }/#{ params[:refseq] }")}
+    #{ params[:refseq] }:#{params[:start]}..#{params[:end]}
+
 
 #sequence
   %ol.basepairs
@@ -6,15 +10,16 @@
       %li{:class => "base #{ base.downcase }"}= base
     .clear-fix
 
-- s = segment[:start].to_i
-- e = segment[:end].to_i
-- seg_length = e - s
+- s = params[:start].to_i
+- e = params[:end].to_i
+- len = e - s
+- base_url = "/services/#{ params[:name] }/#{ params[:refseq] }/residues"
 
 %ul.pager
-  - if s - seg_length > 1
+  - if s - len > 1
     %li.previous
-      %a{:href => "/#{ name }/residues?start=#{ s - seg_length }&end=#{ e - seg_length }"}
+      %a{:href => url("#{ base_url }?start=#{ s - len }&end=#{ e - len }")}
         previous
   %li.next
-    %a{:href => "/#{ name }/residues?start=#{ s + seg_length }&end=#{ e + seg_length }"}
+    %a{:href => url("#{ base_url }?start=#{ s + len }&end=#{ e + len }")}
       next

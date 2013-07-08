@@ -1,10 +1,20 @@
-%h2 #{refseq.primaryIdentifier}:#{segment[:start]}..#{segment[:end]} stats
+- chrom = refseq.primaryIdentifier
+- short_seg = short_segment(params[:name], chrom)
+- qs = "start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"
+
+%h2 #{chrom}:#{params[:start]}..#{params[:end]} stats
+
 %table.table.table-bordered.table-striped
-  - stats.select{ |k, v| v }.each do |name, value|
+  %thead
     %tr
-      %td= name
-      %td= value
+      %th name
+      %th value
+  %tbody
+    - stats.select{ |k, v| v }.each do |name, value|
+      %tr
+        %td= name
+        %td= value
 
-%a.btn{:href => "/#{ refseq.primaryIdentifier }/features?start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"} features
+%a.btn{:href => url("/services/#{ params[:name] }/#{ chrom }/features?#{ qs }")} features
 
-%a.btn{:href => "/#{ refseq.primaryIdentifier }/residues?start=#{ short_seg[:start] }&end=#{ short_seg[:end]}"} sequence
+%a.btn{:href => url("/services/#{ params[:name] }/#{ chrom }/residues?#{ qs }")} sequence

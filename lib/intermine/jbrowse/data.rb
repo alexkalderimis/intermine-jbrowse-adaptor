@@ -15,8 +15,8 @@ module InterMine
                 @feature_counts = {}
                 @page_size = 1000 # basepairs
                 @refseqs = nil
-                @service = Service.new(opts[:root])
-                @taxId = opts[:taxon]
+                @service = Service.new(opts["root"])
+                @taxId = opts["taxon"]
             end
 
             def root
@@ -25,7 +25,7 @@ module InterMine
 
             def short_segment(name, segment = {})
                 x = (segment[:start] || 0).to_i
-                y = (segment[:end] || feature(name, {}, "Chromosome").length).to_i
+                y = (segment[:end] || feature(name, "Chromosome").length).to_i
                 if y - x > page_size
                     y = x + page_size
                 end
@@ -70,7 +70,7 @@ module InterMine
                 }
             end
 
-            def feature(name, segment = {}, type = "SequenceFeature")
+            def feature(name, type = "SequenceFeature", segment = {})
                 q = @service.query(type).select("*").where(for_organism_and_name(name))
                 if segment[:sequence]
                     q.add_to_select("sequence.residues")
@@ -86,9 +86,9 @@ module InterMine
                 end
             end
 
-            def stats(name, type = "Chromosome", feature = "SequenceFeature", segment = {})
-                q = @service.query(feature).select(:id).where(for_organism)
-                seq_feat = feature(name, segment, type)
+            def stats(name, type = "Chromosome", ftype = "SequenceFeature", segment = {})
+                q = @service.query(ftype).select(:id).where(for_organism)
+                seq_feat = feature(name, type, segment)
                 range = get_range name, segment
                 length = segment_length name, type, segment
 
@@ -144,7 +144,7 @@ module InterMine
                 key = "#{ type }/#{ name }"
                 cache = @sequence_cache
                 unless cache.has_key? key
-                    cache[key] = feature(name, {:sequence => true}, type).sequence.residues
+                    cache[key] = feature(name, type, {:sequence => true}).sequence.residues
                 end
                     
                 dna = @sequence_cache[key]
@@ -214,12 +214,12 @@ module InterMine
 
             def segment_length(name, type, segment = {})
                 if segment[:start].nil? and segment[:end].nil?
-                    return feature(name, {}, type).length
+                    return feature(name, type).length
                 elsif segment[:start].nil? or segment[:end].nil?
                     if segment[:start].nil?
                         return segment[:end].to_i
                     else
-                        return feature(name, {}, type).length - segment[:start].to_i
+                        return feature(name, type).length - segment[:start].to_i
                     end
                 else
                     return segment[:end].to_i - segment[:start].to_i

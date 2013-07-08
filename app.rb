@@ -15,13 +15,29 @@ class JBrowsify < Sinatra::Base
     register Sinatra::ConfigFile
     register Sinatra::RespondWith
 
-    ADAPTORS = Hash[ settings.services.map{ |n, s| [n, InterMine::JBrowse::Adaptor.new(s)] } ]
+    config_file "config.yml"
+
+    ADAPTORS = Hash.new
+    
+    before do
+        if JBrowsify::ADAPTORS.empty?
+            puts settings.services
+            adaptors = settings.services.map do |n, s|
+                [n, InterMine::JBrowse::Adaptor.new(s)]
+            end
+            JBrowsify::ADAPTORS.update Hash[adaptors]
+        end
+    end
+
+    # Common control methods shared by HTML and JSON outputs
 
     def adaptor(name)
         ADAPTORS[name] or halt 404
     end
-
-    # Common control methods shared by HTML and JSON outputs
+    
+    def short_segment(service, refseq)
+        adaptor(service).short_segment(refseq, params)
+    end
 
     def feature_type
         params[:type] || "SequenceFeature"
@@ -62,19 +78,45 @@ class JBrowsify < Sinatra::Base
         end
     end
 
+    get "/services/:name/:refseq", :provides => [:html, :json] do |name, refseq|
+        child_type = params[:type] || "SequenceFeature"
+        mine = adaptor(name)
+        respond_with :refseq, {
+            :refseq => mine.feature(refseq, "Chromosome"),
+            :stats => mine.stats(refseq, "Chromosome", child_type, params)
+        }
+    end
+
+    get "/services/:name/:refseq/features", :provides => [:html, :json] do |name, refseq|
+        child_type = params[:type] || "SequenceFeature"
+        mine = adaptor(name)
+        respond_with :features, {
+            :refseq => mine.feature(refseq, "Chromosome"),
+            :features => get_features(name, refseq, params)
+        }
+    end
+
+    get "/services/:name/:refseq/residues", :provides => [:html, :json] do |name, refseq|
+        mine = adaptor(name)
+        respond_with :sequence, {
+            :sequence => mine.sequence(refseq, "Chromosome", params)
+        }
+    end
+
     post "/services", :provides => [:json, :html] do
         unless params[:root] and params[:taxon] and params[:label]
             error 400
         end
-        service = params.select { |k, v| [:root, :taxon].include? k }
+        lebel = params[:label]
+        service = params.select { |k, v| [:root, :taxon, :label].include? k }
         adaptor = InterMine::JBrowse::Adaptor.new(service)
 
-        ADAPTORS[params[:label]] = adaptor
-        settings.services[params[:label]] = service
+        ADAPTORS[label] = adaptor
+        settings.services[label] = service
 
         respond_to do |f| 
             f.json { service.to_json }
-            f.html { redirect to("/services/#{ params[:label] }"), 201
+            f.html { redirect to("/services/#{ label }"), 201}
         end
     end
 
@@ -125,50 +167,22 @@ class JBrowsify < Sinatra::Base
 
     # And here begin the routes required by the JBrowse REST Store API
 
-    get "/:service/stats/global", :provides => [:json] do |label|
+    get "/jbrowse/:service/stats/global", :provides => [:json] do |label|
         adaptor(label).global_stats.to_json
     end
 
-    get "/:service/stats/region/:refseq_name", :provides => [:json] do |label, name|
+    get "/jbrowse/:service/stats/region/:refseq_name", :provides => [:json] do |label, name|
         adaptor(label).stats(name, "Chromosome", feature_type, params).to_json
     end
 
-    get "/:service/features/:refseq_name", :provides => [:json] do |label, name|
+    get "/jbrowse/:service/features/:refseq_name", :provides => [:json] do |label, name|
         {:features => get_features(label, name, params)}.to_json
     end
 
     # The routes useful for graphical inspection of the app.
 
     get "/" do
-        haml :index, :locals => {
-            :global_stats => FLYMINE.global_stats,
-            :ref_seqs => FLYMINE.refseqs
-        }
-    end
-
-    get "/:refseq" do |name|
-        haml :refseq, :locals => {
-            :segment => params,
-            :refseq => FLYMINE.feature(name, {}, "Chromosome"),
-            :short_seg => short_segment(name, params),
-            :stats => FLYMINE.stats(name, "Chromosome", (params[:type] || "SequenceFeature"), params)
-        }
-    end
-
-    get "/:refseq/features" do |name|
-        haml :features, :locals => {
-            :segment => params,
-            :refseq => FLYMINE.feature(name, {}, "Chromosome"),
-            :features => get_features(name, params)
-        }
-    end
-
-    get "/:refseq/residues" do |name|
-        haml :sequence, :locals => {
-            :sequence => FLYMINE.sequence(name, "Chromosome", params),
-            :name => name,
-            :segment => params
-        }
+        redirect to("/services")
     end
 
     run! if app_file == $0

@@ -14,9 +14,12 @@
 
 - max_seq_len = ref_seqs.map(&:length).compact.max
 - chroms = ref_seqs.sort { |a, b| (b.length || 0) <=> (a.length || 0)}
+
 %h2 Reference Sequences
+
 %ul#ref-seqs
+  - chrom_url = lambda {|chrom| url("/services/#{ params[:name] }/#{ chrom.primaryIdentifier }?start=1&end=#{ chrom.length }")}
   - chroms.each do |chrom|
     - w = chrom.length ? (chrom.length.to_f / max_seq_len.to_f * 100) : 0.1
     %li.ref-seq{:style => "width: #{ w }%"}
-      %a{:href => "/#{chrom.primaryIdentifier}?start=1&end=#{ chrom.length }"}= chrom.primaryIdentifier
+      %a{:href => chrom_url.call(chrom)}= chrom.primaryIdentifier

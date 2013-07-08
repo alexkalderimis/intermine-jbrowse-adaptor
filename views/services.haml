@@ -7,9 +7,9 @@
       %th Root
       %th Organism
   %tbody
-    - settings.services.each |label, service|
+    - settings.services.each do |label, service|
       %tr
         %td
-          %a{:href => url("/services/#{ label }")} label
-        %td= service[:root]
-        %td= service[:taxon]
+          %a{:href => url("/services/#{ label }")}= label
+        %td= service["root"]
+        %td= service["taxon"]
