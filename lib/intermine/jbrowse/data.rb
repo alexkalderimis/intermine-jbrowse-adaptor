@@ -13,6 +13,7 @@ module InterMine
             def initialize(opts)
                 @sequence_cache = {}
                 @feature_counts = {}
+                @stats_cache = {}
                 @page_size = 1000 # basepairs
                 @refseqs = nil
                 @service = Service.new(opts["root"])
@@ -56,18 +57,20 @@ module InterMine
             end
 
             def global_stats
-                feature_count = count_features
-                total_length = refseqs.map(&:length).compact.reduce(&:+)
-                density = feature_count.to_f / total_length.to_f
-                score_summary = @service.query("SequenceFeature").summaries(:score).first
-                {
-                    :featureCount => feature_count,
-                    :featureDensity => density,
-                    :scoreMin => score_summary["min"],
-                    :scoreMax => score_summary["max"],
-                    :scoreMean => score_summary["average"],
-                    :scoreStdDev => score_summary["stdev"]
-                }
+                serve_from_cache @stats_cache, "#{ @service.release }/global" do
+                    feature_count = count_features
+                    total_length = refseqs.map(&:length).compact.reduce(&:+)
+                    density = feature_count.to_f / total_length.to_f
+                    score_summary = @service.query("SequenceFeature").summaries(:score).first
+                    {
+                        :featureCount => feature_count,
+                        :featureDensity => density,
+                        :scoreMin => score_summary["min"],
+                        :scoreMax => score_summary["max"],
+                        :scoreMean => score_summary["average"],
+                        :scoreStdDev => score_summary["stdev"]
+                    }
+                end
             end
 
             def feature(name, type = "SequenceFeature", segment = {})
@@ -87,31 +90,34 @@ module InterMine
             end
 
             def stats(name, type = "Chromosome", ftype = "SequenceFeature", segment = {})
-                q = @service.query(ftype).select(:id).where(for_organism)
-                seq_feat = feature(name, type, segment)
-                range = get_range name, segment
-                length = segment_length name, type, segment
+                key = "#{ @service.release }/#{ name }/#{ type }/#{ ftype }/#{ segment[:start] }..#{segment[:end]}"
+                serve_from_cache @stats_cache, key do
+                    q = @service.query(ftype).select(:id).where(for_organism)
+                    seq_feat = feature(name, type, segment)
+                    range = get_range name, segment
+                    length = segment_length name, type, segment
 
-                unless range.nil?
-                    if segment[:start] == 0 and segment[:end] == seq_feat.length
-                        q = q.where("chromosomeLocation.locatedOn.primaryIdentifier" => name)
-                    else
-                        q = q.where(:chromosomeLocation => {:OVERLAPS => [range]})
+                    unless range.nil?
+                        if segment[:start] == 0 and segment[:end] == seq_feat.length
+                            q = q.where("chromosomeLocation.locatedOn.primaryIdentifier" => name)
+                        else
+                            q = q.where(:chromosomeLocation => {:OVERLAPS => [range]})
+                        end
                     end
+
+                    score_summary = q.summaries(:score).first
+                    c = q.count
+
+                    density = c.to_f / length.to_f
+
+                    {
+                        :featureCount => c, :featureDensity => density,
+                        :scoreMin => score_summary["min"],
+                        :scoreMax => score_summary["max"],
+                        :scoreMean => score_summary["average"],
+                        :scoreStdDev => score_summary["stdev"]
+                    }
                 end
-
-                score_summary = q.summaries(:score).first
-                c = q.count
-
-                density = c.to_f / length.to_f
-
-                {
-                    :featureCount => c, :featureDensity => density,
-                    :scoreMin => score_summary["min"],
-                    :scoreMax => score_summary["max"],
-                    :scoreMean => score_summary["average"],
-                    :scoreStdDev => score_summary["stdev"]
-                }
             end
 
             def features(on, parent_type = "Chromosome", feature_type = "SequenceFeature", segment = {})
@@ -236,6 +242,13 @@ module InterMine
                 else
                     return "#{name}:#{segment[:start]}..#{segment[:end]}"
                 end
+            end
+
+            def serve_from_cache(cache, key)
+                if cache[key].nil?
+                    cache[key] = yield
+                end
+                return cache[key]
             end
 
         end
