@@ -25,7 +25,7 @@ module InterMine
             end
 
             def short_segment(name, segment = {})
-                x = (segment[:start] || 1).to_i
+                x = (segment[:start] || 0).to_i
                 y = (segment[:end] || feature(name, "Chromosome").length).to_i
                 if y - x > page_size
                     y = x + page_size
@@ -169,6 +169,13 @@ module InterMine
                 result["seq"]
             end
 
+            def from_interbase(segment)
+                {
+                    :start => ((segment[:start] or 0).to_i + 1),
+                    :end => segment[:end]
+                }
+            end
+
             def for_organism
                 {"organism.taxonId" => @taxId}
             end
@@ -240,7 +247,8 @@ module InterMine
                 elsif segment[:start].nil? or segment[:end].nil?
                     return "#{name}:#{segment[:start] or segment[:end]}"
                 else
-                    return "#{name}:#{segment[:start]}..#{segment[:end]}"
+                    pos = from_interbase segment
+                    return "#{name}:#{pos[:start]}..#{pos[:end]}"
                 end
             end
 
