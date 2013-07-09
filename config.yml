@@ -1,4 +1,5 @@
 static: true
+server: puma
 public_folder: public
 jbrowse_dir: JBrowse-1.9.7
 haml:
@@ -8,4 +9,5 @@ services:
     betaflymine:
         root: "http://beta.flymine.org/beta"
         taxon: 7227
+        example_region: "loc=X%3A11231027..11233388&tracks=betaflymine_Gene_track%2Cbetaflymine_Exon_track%2Cbetaflymine_Intron_track"
     

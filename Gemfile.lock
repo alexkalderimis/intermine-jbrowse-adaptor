@@ -11,6 +11,10 @@ GEM
     json (1.8.0)
     json (1.8.0-java)
     multi_json (1.7.7)
+    puma (2.3.1)
+      rack (>= 1.1, < 2.0)
+    puma (2.3.1-java)
+      rack (>= 1.1, < 2.0)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack
@@ -38,5 +42,6 @@ DEPENDENCIES
   intermine (~> 1.04.00)
   json
   multi_json
+  puma
   sinatra
   sinatra-contrib
