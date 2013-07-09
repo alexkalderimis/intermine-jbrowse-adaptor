@@ -1,4 +1,4 @@
-%a.btn{:href => url("/#{params[:name]}/jbrowse/index.html")} View in JBrowse
+%a.btn{:href => url("/#{params[:name]}/jbrowse/index.html?#{ settings.services[params[:name]]["example_region"] || '' }")} View in JBrowse
 
 %h2 Global Stats
 %table.table.table-bordered.table-striped
