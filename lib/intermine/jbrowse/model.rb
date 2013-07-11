@@ -13,18 +13,21 @@ module InterMine
 
         end
 
-        BasicFeature = Struct.new("BasicFeature", :type, :name, :description, :score, :uniqueID, :start, :end, :strand) do 
+        BasicFeature = Struct.new("BasicFeature", :type, :name, :description, :symbol, :score, :uniqueID, :start, :end, :strand, :link) do 
 
             include Hashlike
 
-            def self.create(locatedFeature)
+            def self.create(locatedFeature, link_base = '')
                 feature = locatedFeature.feature
                 type = feature.sequenceOntologyTerm ? feature.sequenceOntologyTerm.name : feature.instance_variable_get('@__cd__').name
                 name = (feature.name or feature.symbol or feature.primaryIdentifier)
+                symbol = feature.symbol
                 description = feature.respond_to?(:description) ? feature.description : nil
                 score = feature.score
                 uniqueID = feature.primaryIdentifier
-                BasicFeature.new(type, name, description, score, uniqueID, locatedFeature.start, locatedFeature.end, locatedFeature.strand)
+                href = "#{ link_base }report.do?id=#{ feature.objectId }"
+                link = "<a href=\"#{ href }\">#{ href }</a>"
+                BasicFeature.new(type, name, description, symbol, score, uniqueID, locatedFeature.start, locatedFeature.end, locatedFeature.strand, link)
             end
         end
 
@@ -37,24 +40,19 @@ module InterMine
             end
         end
 
-        Feature = Struct.new("Feature", :type, :name, :description, :score, :uniqueID, :start, :end, :strand, :subfeatures) do
+        Feature = Struct.new("Feature", :type, :name, :description, :symbol, :score, :uniqueID, :start, :end, :strand, :link, :subfeatures) do
 
             include Hashlike
 
-            def self.create(locatedFeature)
-                parsed = BasicFeature.create(locatedFeature).values
+            def self.create(locatedFeature, link_base = '')
+                values = BasicFeature.create(locatedFeature, link_base).values
 
                 feature = locatedFeature.feature
                 if feature.nil?
                     raise "This location has no feature! #{ locatedFeature }"
                 end
-                child_features = feature.locatedFeatures
-                if child_features.nil?
-                    subfeatures = []
-                else
-                    subfeatures = child_features.map {|sf| BasicFeature.create(sf)}
-                end
-                values = parsed + [subfeatures]
+                cfs = feature.locatedFeatures
+                values << (cfs.nil? ? [] : cfs.map {|sf| BasicFeature.create(sf)})
                 Feature.new(*values)
             end
 

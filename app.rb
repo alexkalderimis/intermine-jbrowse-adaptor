@@ -61,9 +61,11 @@ class JBrowsify < Sinatra::Base
         if segment[:sequence] and segment[:type] == "Chromosome"
             return get_refseq_feature(label, name, segment)
         end
+        service = adaptor(label)
+        link_base = service.root.sub(/service\/?$/, '')
 
-        fs = adaptor(label).features(name, "Chromosome", feature_type, segment)
-        fs.map {|f| InterMine::JBrowse::Feature.create(f) }
+        fs = service.features(name, "Chromosome", feature_type, segment)
+        fs.map {|f| InterMine::JBrowse::Feature.create(f, link_base)}
     end
 
     # Routes to manage services

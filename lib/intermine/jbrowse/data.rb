@@ -209,9 +209,13 @@ module InterMine
             end
 
             def located_features_q(name, parent = "Chromosome", child = "SequenceFeature")
+                view = feature_view
+                if @service.model.table(child).has_field? "description"
+                    view << "locatedFeatures.feature.description"
+                end
                 @service.query(parent).
                     where("locatedFeatures.feature" => {:sub_class => child}).
-                    select(*feature_view).
+                    select(*view).
                     where(for_organism_and_name(name)).
                     outerjoin("locatedFeatures").
                     outerjoin("locatedFeatures.feature.sequenceOntologyTerm")
