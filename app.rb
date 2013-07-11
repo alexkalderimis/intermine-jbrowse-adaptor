@@ -49,7 +49,7 @@ class JBrowsify < Sinatra::Base
     end
 
     def jbrowse_base(service)
-        [request.base_url, service, :jbrowse, ''].join '/'
+        [request.base_url, :jbrowse, service, ''].join '/'
     end
 
     def get_refseq_feature(label, name, segment = {})
@@ -131,36 +131,42 @@ class JBrowsify < Sinatra::Base
 
     # And here begin the routes required by the JBrowse REST Store API
 
-    get "/:service/jbrowse/stats/global", :provides => [:json] do |label|
+    get "/jbrowse/:service/stats/global", :provides => [:json] do |label|
         adaptor(label).global_stats.to_json
     end
 
-    get "/:service/jbrowse/stats/region/:refseq_name", :provides => [:json] do |label, name|
+    get "/jbrowse/:service/stats/region/:refseq_name", :provides => [:json] do |label, name|
         adaptor(label).stats(name, "Chromosome", feature_type, params).to_json
     end
 
-    get "/:service/jbrowse/features/:refseq_name", :provides => [:json] do |label, name|
+    get "/jbrowse/:service/features/:refseq_name", :provides => [:json] do |label, name|
         {:features => get_features(label, name, params)}.to_json
     end
 
 
     # Routes to run a local JBrowse.
 
-    get %r{/JBrowse-.*/data/names/root.json} do
-        {}.to_json
+    get "/jbrowse/:service/data/names/root.json" do
+        "{}"
     end
 
-    get "/:service/jbrowse/jbrowse_conf.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/InterMine/Store/SeqFeature/WS.js" do
+        send_file [settings.public_folder, :javascript, "intermine-store.js"].join('/')
+    end
+
+    get "/jbrowse/:service/jbrowse_conf.json", :provides => [:json] do |label|
         dataset = {
             :url => jbrowse_base(label),
             :name => "#{ label } data"
         }
         datasets = Hash.new()
         datasets.store(label, dataset)
-        respond_with :datasets => datasets
+        respond_with :datasets => datasets, :plugins => [
+            "InterMine/Store/SeqFeature/WS"
+        ]
     end
 
-    get "/:service/jbrowse/data/trackList.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/data/trackList.json", :provides => [:json] do |label|
         base = jbrowse_base(label)
         tracks = adaptor(label).sequence_types.map do |c|
             {
@@ -182,27 +188,35 @@ class JBrowsify < Sinatra::Base
             :query => { :sequence => true, :type => "Chromosome" }
         }
 
+        # tracks << {
+        #     :label => "ws-track",
+        #     :key => "WS",
+        #     :type => "JBrowse/View/Track/HTMLFeatures",
+        #     :storeClass => "InterMine/Store/SeqFeature/WS",
+        #     :baseUrl => base,
+        #     :query => { :arg1 => :foo, :arg2 => :bar },
+        #     :config => { :carg1 => :quux, :carg2 => :qaax }
+        # }
+
         respond_with :dataset_id => "InterMine", :tracks => tracks
 
     end
 
-    get "/:service/jbrowse/data/seq/refSeqs.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/data/seq/refSeqs.json", :provides => [:json] do |label|
         data = adaptor(label).refseqs.map do |rs|
             {:name => rs.primaryIdentifier, :start => 0, :end => rs.length }
         end
         respond_with data
     end
 
-    get "/:service/jbrowse" do |name|
-        redirect to("/#{ name }/jbrowse/index.html")
+    get "/jbrowse/:service" do |name|
+        redirect to("/jbrowse/#{ name }/index.html")
     end
 
-    get %r{/(\w+)/jbrowse/(.+)} do |name, path|
+    get %r{/jbrowse/(\w+)/(.+)} do |name, path|
         root = File.dirname(__FILE__)
         file = File.join(root, settings.public_folder, settings.jbrowse_dir, path)
-        puts "Looking for #{ file }"            
         if File.exist? file
-            puts "Found it"
             send_file(file)
         else
             pass
