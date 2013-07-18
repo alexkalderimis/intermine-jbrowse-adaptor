@@ -4,6 +4,7 @@ require "intermine/service"
 require "sinatra/base"
 require "sinatra/config_file"
 require "sinatra/respond_with"
+require "sinatra/cross_origin"
 require "haml"
 require "json"
 require "multi_json"
@@ -15,6 +16,7 @@ class JBrowsify < Sinatra::Base
 
     register Sinatra::ConfigFile
     register Sinatra::RespondWith
+    register Sinatra::CrossOrigin
 
     config_file "config.yml"
 
@@ -134,17 +136,19 @@ class JBrowsify < Sinatra::Base
     # And here begin the routes required by the JBrowse REST Store API
 
     get "/jbrowse/:service/stats/global", :provides => [:json] do |label|
+        cross_origin
         adaptor(label).global_stats.to_json
     end
 
     get "/jbrowse/:service/stats/region/:refseq_name", :provides => [:json] do |label, name|
+        cross_origin
         adaptor(label).stats(name, "Chromosome", feature_type, params).to_json
     end
 
     get "/jbrowse/:service/features/:refseq_name", :provides => [:json] do |label, name|
+        cross_origin
         {:features => get_features(label, name, params)}.to_json
     end
-
 
     # Routes to run a local JBrowse.
 
@@ -157,6 +161,7 @@ class JBrowsify < Sinatra::Base
     end
 
     get "/jbrowse/:service/jbrowse_conf.json", :provides => [:json] do |label|
+        cross_origin
         dataset = {
             :url => jbrowse_base(label),
             :name => "#{ label } data"
@@ -169,6 +174,7 @@ class JBrowsify < Sinatra::Base
     end
 
     get "/jbrowse/:service/data/trackList.json", :provides => [:json] do |label|
+        cross_origin
         base = jbrowse_base(label)
         tracks = adaptor(label).sequence_types.map do |c|
             {
@@ -205,6 +211,7 @@ class JBrowsify < Sinatra::Base
     end
 
     get "/jbrowse/:service/data/seq/refSeqs.json", :provides => [:json] do |label|
+        cross_origin
         data = adaptor(label).refseqs.map do |rs|
             {:name => rs.primaryIdentifier, :start => 0, :end => rs.length }
         end

@@ -2,6 +2,7 @@ source "https://rubygems.org"
 
 gem "sinatra"
 gem "sinatra-contrib"
+gem "sinatra-cross_origin"
 gem "intermine", "~> 1.04.00"
 gem "json"
 gem "multi_json"
