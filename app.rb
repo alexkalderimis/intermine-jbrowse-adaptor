@@ -120,7 +120,7 @@ class JBrowsify < Sinatra::Base
         unless params[:root] and params[:taxon] and params[:label]
             error 400
         end
-        lebel = params[:label]
+        label = params[:label]
         service = params.select { |k, v| [:root, :taxon, :label].include? k }
         adaptor = InterMine::JBrowse::Adaptor.new(service)
 
