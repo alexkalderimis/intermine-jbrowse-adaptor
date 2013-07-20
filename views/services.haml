@@ -6,10 +6,14 @@
       %th Label
       %th Root
       %th Organism
+      %th JBrowse
   %tbody
     - settings.services.each do |label, service|
-      %tr
-        %td
-          %a{:href => url("/services/#{ label }")}= label
-        %td= service["root"]
-        %td= service["taxon"]
+      - organisms(label).each do |organism|
+        %tr
+          %td
+            %a{:href => url("/services/#{ label }/#{ organism.taxonId }")}= label
+          %td= service["root"]
+          %td= organism.shortName
+          %td
+            %a{:href => url("/jbrowse/#{ label }/#{ organism.taxonId }")} JBrowse

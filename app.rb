@@ -21,21 +21,41 @@ class JBrowsify < Sinatra::Base
     config_file "config.yml"
 
     ADAPTORS = Hash.new
+
+    configure :development do
+        enable :logging
+    end
     
     before do
         if JBrowsify::ADAPTORS.empty?
-            puts settings.services
-            adaptors = settings.services.map do |n, s|
-                [n, InterMine::JBrowse::Adaptor.new(s)]
+            settings.services.each do |n, opts|
+                h = Hash.new
+                s = Service.new(opts["root"])
+                s.select("Organism.taxonId").results.each do |org|
+                    logger.info "New adaptor for #{ n }: #{ org.taxonId }"
+                    h[org.taxonId.to_s] = InterMine::JBrowse::Adaptor.new(opts.merge :taxon => org.taxonId)
+                end
+                JBrowsify::ADAPTORS[n] = h
             end
-            JBrowsify::ADAPTORS.update Hash[adaptors]
         end
     end
 
     # Common control methods shared by HTML and JSON outputs
 
+    def organisms(name)
+        opts = settings.services[name] or halt 404
+        s = Service.new opts["root"]
+        s.select("Organism.*").all
+    end
+
     def adaptor(name)
-        ADAPTORS[name] or halt 404
+        org = ( params[:taxon] || settings.services[name]["defaultTaxon"].to_s )
+        a = begin
+            ADAPTORS[name][org]
+        rescue
+            nil
+        end
+        a or error 404
     end
     
     def short_segment(service, refseq)
@@ -76,7 +96,7 @@ class JBrowsify < Sinatra::Base
         respond_with :services, settings.services
     end
 
-    get "/services/:name", :provides => [:html, :json] do |name|
+    get "/services/:name/:taxon", :provides => [:html, :json] do |name|
         respond_to do |f|
             f.json do
                 service = settings.services[name] or halt 404
@@ -152,15 +172,15 @@ class JBrowsify < Sinatra::Base
 
     # Routes to run a local JBrowse.
 
-    get "/jbrowse/:service/data/names/root.json" do
+    get "/jbrowse/:service/:taxon/data/names/root.json" do
         "{}"
     end
 
-    get "/jbrowse/:service/InterMine/Store/SeqFeature/WS.js" do
+    get "/jbrowse/:service/:taxon/InterMine/Store/SeqFeature/WS.js" do
         send_file [settings.public_folder, :javascript, "intermine-store.js"].join('/')
     end
 
-    get "/jbrowse/:service/jbrowse_conf.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/:taxon/jbrowse_conf.json", :provides => [:json] do |label, taxonId|
         cross_origin
         dataset = {
             :url => jbrowse_base(label),
@@ -173,17 +193,19 @@ class JBrowsify < Sinatra::Base
         ]
     end
 
-    get "/jbrowse/:service/data/trackList.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/:taxon/data/trackList.json", :provides => [:json] do |label, taxonId|
         cross_origin
         base = jbrowse_base(label)
-        tracks = adaptor(label).sequence_types.map do |c|
-            {
+        tracks = []
+
+        adaptor(label).sequence_types.each do |c|
+            tracks << {
                 :label => "#{label}_#{ c.name }_track",
-                :key => "#{ c.name }s",
+                :key => "#{ c.name }s in #{ label }",
                 :type => "JBrowse/View/Track/HTMLFeatures",
                 :storeClass => "JBrowse/Store/SeqFeature/REST",
                 :baseUrl => base,
-                :query => { :type => c.name }
+                :query => { :type => c.name, :taxon => taxonId}
             }
         end
 
@@ -193,36 +215,39 @@ class JBrowsify < Sinatra::Base
             :type => "JBrowse/View/Track/Sequence",
             :storeClass => "JBrowse/Store/SeqFeature/REST",
             :baseUrl => base,
-            :query => { :sequence => true, :type => "Chromosome" }
+            :query => {
+                :sequence => true,
+                :type => "Chromosome",
+                :taxon => taxonId
+            }
         }
 
-        # tracks << {
-        #     :label => "ws-track",
-        #     :key => "WS",
-        #     :type => "JBrowse/View/Track/HTMLFeatures",
-        #     :storeClass => "InterMine/Store/SeqFeature/WS",
-        #     :baseUrl => base,
-        #     :query => { :arg1 => :foo, :arg2 => :bar },
-        #     :config => { :carg1 => :quux, :carg2 => :qaax }
-        # }
-
-        respond_with :dataset_id => "InterMine", :tracks => tracks
+        respond_with :refSeqSelectorMaxSize => tracks.size, :dataset_id => "InterMine", :tracks => tracks
 
     end
 
-    get "/jbrowse/:service/data/seq/refSeqs.json", :provides => [:json] do |label|
+    get "/jbrowse/:service/:taxon/data/seq/refSeqs.json", :provides => [:json] do |label, taxonId|
         cross_origin
-        data = adaptor(label).refseqs.map do |rs|
-            {:name => rs.primaryIdentifier, :start => 0, :end => rs.length }
-        end
-        respond_with data
+        datasets = adaptor(label).refseqs.map do |rs|
+            {
+                :name  => rs.primaryIdentifier,
+                :start => 0,
+                :end   => rs.length
+            }
+        end.to_a
+        respond_with datasets
     end
 
     get "/jbrowse/:service" do |name|
-        redirect to("/jbrowse/#{ name }/index.html")
+        taxonId = (settings.services[name]["defaultTaxon"] or error 404)
+        redirect to("/jbrowse/#{ name }/#{ taxonId }/index.html")
     end
 
-    get %r{/jbrowse/(\w+)/(.+)} do |name, path|
+    get "/jbrowse/:service/:taxon" do |name, taxonId|
+        redirect to("/jbrowse/#{ name }/#{ taxonId }/index.html")
+    end
+
+    get %r{/jbrowse/(\w+)/(\w+)/(.+)} do |name, taxon, path|
         root = File.dirname(__FILE__)
         file = File.join(root, settings.public_folder, settings.jbrowse_dir, path)
         if File.exist? file

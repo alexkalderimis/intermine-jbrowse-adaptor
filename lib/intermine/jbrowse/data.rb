@@ -19,7 +19,7 @@ module InterMine
                 @page_size = 1000 # basepairs
                 @refseqs = nil
                 @service = Service.new(opts["root"])
-                @taxId = opts["taxon"]
+                @taxId = opts[:taxon]
             end
 
             def root
@@ -44,7 +44,7 @@ module InterMine
 
             def refseqs
                 if @refseqs.nil?
-                    @refseqs = chromosomes.select(:primaryIdentifier, :length).all.to_a
+                    @refseqs = chromosomes.select(:primaryIdentifier, :length, "organism.shortName").where(:length => {:gt => 0}).all.to_a
                 else
                     @refseqs
                 end
@@ -149,13 +149,10 @@ module InterMine
             private
 
             def do_seq_with_cache(name, type, segment)
-                key = "#{ type }/#{ name }"
-                cache = @sequence_cache
-                unless cache.has_key? key
-                    cache[key] = feature(name, type, {:sequence => true}).sequence.residues
+                dna = serve_from_cache @sequence_cache, "#{ type }/#{ name }" do
+                    feature(name, type, {:sequence => true}).sequence.residues
                 end
                     
-                dna = @sequence_cache[key]
                 s = segment[:start] || 0
                 e = segment[:end] || dna.size
                 len = e.to_i - s.to_i
