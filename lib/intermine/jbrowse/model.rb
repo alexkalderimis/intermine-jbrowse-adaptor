@@ -31,12 +31,12 @@ module InterMine
             end
         end
 
-        ReferenceSequence = Struct.new("ReferenceSequence", :start, :end, :seq) do
+        ReferenceSequence = Struct.new("ReferenceSequence", :start, :end, :seq, :name) do
 
             include Hashlike
 
-            def self.create(segment, seq)
-                ReferenceSequence.new((segment[:start] || 0), segment[:end], seq)
+            def self.create(segment, seq, name)
+                ReferenceSequence.new((segment[:start] || 0), segment[:end], seq, name)
             end
         end
 

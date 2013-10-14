@@ -70,13 +70,18 @@ class JBrowsify < Sinatra::Base
         "#{ chrom.primaryIdentifier }:#{(params[:start] || 0).to_i + 1}..#{params[:end] || chrom.length}"
     end
 
-    def jbrowse_base(service)
-        [request.base_url, :jbrowse, service, ''].join '/'
+    def jbrowse_base(service, taxonId)
+        adaptor = adaptor(service)
+        if adaptor.api_version >= 15
+            [adaptor(service).root, :jbrowse, taxonId, ''].join '/'
+        else
+            [request.base_url, :jbrowse, service, ''].join '/'
+        end
     end
 
     def get_refseq_feature(label, name, segment = {})
         seq = adaptor(label).sequence(name, "Chromosome", segment)
-        [ InterMine::JBrowse::ReferenceSequence.create(segment, seq) ]
+        [ InterMine::JBrowse::ReferenceSequence.create(segment, seq, name) ]
     end
 
     def get_features(label, name, segment = {})
@@ -96,7 +101,7 @@ class JBrowsify < Sinatra::Base
         respond_with :services, settings.services
     end
 
-    get "/services/:name/:taxon", :provides => [:html, :json] do |name|
+    get "/services/:name/:taxon", :provides => [:html, :json] do |name, taxon|
         respond_to do |f|
             f.json do
                 service = settings.services[name] or halt 404
@@ -183,19 +188,17 @@ class JBrowsify < Sinatra::Base
     get "/jbrowse/:service/:taxon/jbrowse_conf.json", :provides => [:json] do |label, taxonId|
         cross_origin
         dataset = {
-            :url => jbrowse_base(label),
+            :url => jbrowse_base(label, taxonId),
             :name => "#{ label } data"
         }
         datasets = Hash.new()
         datasets.store(label, dataset)
-        respond_with :datasets => datasets, :plugins => [
-            "InterMine/Store/SeqFeature/WS"
-        ]
+        respond_with :datasets => datasets, :exactReferenceSequenceNames => true
     end
 
     get "/jbrowse/:service/:taxon/data/trackList.json", :provides => [:json] do |label, taxonId|
         cross_origin
-        base = jbrowse_base(label)
+        base = jbrowse_base(label, taxonId)
         tracks = []
 
         adaptor(label).sequence_types.each do |c|
@@ -217,12 +220,13 @@ class JBrowsify < Sinatra::Base
             :baseUrl => base,
             :query => {
                 :sequence => true,
+                :reference => true,
                 :type => "Chromosome",
                 :taxon => taxonId
             }
         }
 
-        respond_with :refSeqSelectorMaxSize => tracks.size, :dataset_id => "InterMine", :tracks => tracks
+        respond_with :refSeqSelectorMaxSize => tracks.size, :dataset_id => "InterMine", :tracks => tracks.sort {|a, b| a[:label] <=> b[:label] }
 
     end
 
