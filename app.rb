@@ -200,6 +200,14 @@ class JBrowsify < Sinatra::Base
         cross_origin
         base = jbrowse_base(label, taxonId)
         tracks = []
+        store = {
+            :type => "JBrowse/Store/SeqFeature/REST",
+            :baseUrl => base,
+            :region_feature_densities => true,
+            :region_stats => true
+        }
+        stores = Hash.new
+        stores.store(label, store)
 
         adaptor(label).sequence_types.each do |c|
             tracks << {
@@ -208,6 +216,9 @@ class JBrowsify < Sinatra::Base
                 :type => "JBrowse/View/Track/HTMLFeatures",
                 :storeClass => "JBrowse/Store/SeqFeature/REST",
                 :baseUrl => base,
+                :region_feature_densities => true,
+                :regionFeatureDensities => true,
+                :region_stats => true,
                 :query => { :type => c.name, :taxon => taxonId}
             }
         end
@@ -226,7 +237,7 @@ class JBrowsify < Sinatra::Base
             }
         }
 
-        respond_with :refSeqSelectorMaxSize => tracks.size, :dataset_id => "InterMine", :tracks => tracks.sort {|a, b| a[:label] <=> b[:label] }
+        respond_with :stores => stores, :refSeqSelectorMaxSize => tracks.size, :dataset_id => "InterMine", :tracks => tracks.sort {|a, b| a[:label] <=> b[:label] }
 
     end
 
